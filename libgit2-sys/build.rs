@@ -24,7 +24,8 @@ fn main() {
 
     println!("cargo:rustc-cfg=libgit2_vendored");
 
-    if !Path::new("libgit2/src").exists() {
+    if !Path::new("libgit2-sys/libgit2/src").exists() {
+        std::env::set_current_dir("libgit2-sys").unwrap();
         let _ = Command::new("git")
             .args(&["submodule", "update", "--init", "libgit2"])
             .status();
@@ -38,28 +39,28 @@ fn main() {
     fs::create_dir_all(&include).unwrap();
 
     // Copy over all header files
-    cp_r("libgit2/include", &include);
+    cp_r("libgit2-sys/libgit2/include", &include);
 
     cfg.include(&include)
-        .include("libgit2/src/libgit2")
-        .include("libgit2/src/util")
+        .include("libgit2-sys/libgit2/src/libgit2")
+        .include("libgit2-sys/libgit2/src/util")
         .out_dir(dst.join("build"))
         .warnings(false);
 
     // Include all cross-platform C files
-    add_c_files(&mut cfg, "libgit2/src/libgit2");
-    add_c_files(&mut cfg, "libgit2/src/util");
-    add_c_files(&mut cfg, "libgit2/src/libgit2/xdiff");
+    add_c_files(&mut cfg, "libgit2-sys/libgit2/src/libgit2");
+    add_c_files(&mut cfg, "libgit2-sys/libgit2/src/util");
+    add_c_files(&mut cfg, "libgit2-sys/libgit2/src/libgit2/xdiff");
 
     // These are activated by features, but they're all unconditionally always
     // compiled apparently and have internal #define's to make sure they're
     // compiled correctly.
-    add_c_files(&mut cfg, "libgit2/src/libgit2/transports");
-    add_c_files(&mut cfg, "libgit2/src/libgit2/streams");
+    add_c_files(&mut cfg, "libgit2-sys/libgit2/src/libgit2/transports");
+    add_c_files(&mut cfg, "libgit2-sys/libgit2/src/libgit2/streams");
 
     // Always use bundled http-parser for now
-    cfg.include("libgit2/deps/http-parser")
-        .file("libgit2/deps/http-parser/http_parser.c");
+    cfg.include("libgit2-sys/libgit2/deps/http-parser")
+        .file("libgit2-sys/libgit2/deps/http-parser/http_parser.c");
 
     // Use the included PCRE regex backend.
     //
@@ -68,7 +69,7 @@ fn main() {
     // reasons, just define on the command-line for everything. Perhaps there
     // is some way with cc to have different instructions per-file?
     cfg.define("GIT_REGEX_BUILTIN", "1")
-        .include("libgit2/deps/pcre")
+        .include("libgit2-sys/libgit2/deps/pcre")
         .define("HAVE_STDINT_H", Some("1"))
         .define("HAVE_MEMMOVE", Some("1"))
         .define("NO_RECURSE", Some("1"))
@@ -82,13 +83,13 @@ fn main() {
         .define("MAX_NAME_COUNT", Some("10000"));
     // "no symbols" warning on pcre_string_utils.c is because it is only used
     // when when COMPILE_PCRE8 is not defined, which is the default.
-    add_c_files(&mut cfg, "libgit2/deps/pcre");
+    add_c_files(&mut cfg, "libgit2-sys/libgit2/deps/pcre");
 
-    cfg.file("libgit2/src/util/allocators/failalloc.c");
-    cfg.file("libgit2/src/util/allocators/stdalloc.c");
+    cfg.file("libgit2-sys/libgit2/src/util/allocators/failalloc.c");
+    cfg.file("libgit2-sys/libgit2/src/util/allocators/stdalloc.c");
 
     if windows {
-        add_c_files(&mut cfg, "libgit2/src/util/win32");
+        add_c_files(&mut cfg, "libgit2-sys/libgit2/src/util/win32");
         cfg.define("STRSAFE_NO_DEPRECATE", None);
         cfg.define("WIN32", None);
         cfg.define("_WIN32_WINNT", Some("0x0600"));
@@ -100,7 +101,7 @@ fn main() {
             cfg.define("__USE_MINGW_ANSI_STDIO", "1");
         }
     } else {
-        add_c_files(&mut cfg, "libgit2/src/util/unix");
+        add_c_files(&mut cfg, "libgit2-sys/libgit2/src/util/unix");
         cfg.flag("-fvisibility=hidden");
     }
     if target.contains("solaris") || target.contains("illumos") {
@@ -158,25 +159,25 @@ fn main() {
     cfg.define("SHA1DC_NO_STANDARD_INCLUDES", "1");
     cfg.define("SHA1DC_CUSTOM_INCLUDE_SHA1_C", "\"common.h\"");
     cfg.define("SHA1DC_CUSTOM_INCLUDE_UBC_CHECK_C", "\"common.h\"");
-    cfg.file("libgit2/src/util/hash/collisiondetect.c");
-    cfg.file("libgit2/src/util/hash/sha1dc/sha1.c");
-    cfg.file("libgit2/src/util/hash/sha1dc/ubc_check.c");
+    cfg.file("libgit2-sys/libgit2/src/util/hash/collisiondetect.c");
+    cfg.file("libgit2-sys/libgit2/src/util/hash/sha1dc/sha1.c");
+    cfg.file("libgit2-sys/libgit2/src/util/hash/sha1dc/ubc_check.c");
 
     if https {
         if windows {
             features.push_str("#define GIT_SHA256_WIN32 1\n");
-            cfg.file("libgit2/src/util/hash/win32.c");
+            cfg.file("libgit2-sys/libgit2/src/util/hash/win32.c");
         } else if target.contains("apple") {
             features.push_str("#define GIT_SHA256_COMMON_CRYPTO 1\n");
-            cfg.file("libgit2/src/util/hash/common_crypto.c");
+            cfg.file("libgit2-sys/libgit2/src/util/hash/common_crypto.c");
         } else {
             features.push_str("#define GIT_SHA256_OPENSSL 1\n");
-            cfg.file("libgit2/src/util/hash/openssl.c");
+            cfg.file("libgit2-sys/libgit2/src/util/hash/openssl.c");
         }
     } else {
         features.push_str("#define GIT_SHA256_BUILTIN 1\n");
-        cfg.file("libgit2/src/util/hash/builtin.c");
-        cfg.file("libgit2/src/util/hash/rfc6234/sha224-256.c");
+        cfg.file("libgit2-sys/libgit2/src/util/hash/builtin.c");
+        cfg.file("libgit2-sys/libgit2/src/util/hash/rfc6234/sha224-256.c");
     }
 
     if let Some(path) = env::var_os("DEP_Z_INCLUDE") {
