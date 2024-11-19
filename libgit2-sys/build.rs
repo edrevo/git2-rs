@@ -233,6 +233,9 @@ The build is now aborting. To disable, unset the variable or use `LIBGIT2_NO_VEN
         features.push_str("#define GIT_USE_ICONV 1\n");
     }
 
+    if std::env::var("CARGO_FEATURE_DEBUG_STRICT_ALLOC").is_ok() {
+        features.push_str("#define GIT_DEBUG_STRICT_ALLOC 1\n");
+    }
     features.push_str("#endif\n");
     fs::write(include.join("git2_features.h"), features).unwrap();
 
