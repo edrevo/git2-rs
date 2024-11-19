@@ -97,6 +97,10 @@ The build is now aborting. To disable, unset the variable or use `LIBGIT2_NO_VEN
     cfg.include("libgit2/deps/xdiff");
     add_c_files(&mut cfg, "libgit2/deps/xdiff");
 
+    println!("{:?}", env::vars());
+    let path = env::var_os("DEP_JEMALLOC_ROOT").unwrap();
+    cfg.include(path);
+
     // Use the included PCRE regex backend.
     //
     // Ideally these defines would be specific to the pcre files (or placed in
@@ -122,6 +126,7 @@ The build is now aborting. To disable, unset the variable or use `LIBGIT2_NO_VEN
 
     cfg.file("libgit2/src/util/allocators/failalloc.c");
     cfg.file("libgit2/src/util/allocators/stdalloc.c");
+    cfg.file("libgit2/src/util/allocators/debugalloc.c");
 
     if windows {
         add_c_files(&mut cfg, "libgit2/src/util/win32");
