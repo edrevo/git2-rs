@@ -4186,6 +4186,7 @@ extern "C" {
     // Common
     pub fn git_libgit2_version(major: *mut c_int, minor: *mut c_int, rev: *mut c_int) -> c_int;
     pub fn git_libgit2_features() -> c_int;
+    pub fn git_libgit2_print_memstats() -> c_int;
     pub fn git_libgit2_opts(option: c_int, ...) -> c_int;
 
     // Worktrees
